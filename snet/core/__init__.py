@@ -36,12 +36,18 @@ class Network(object):
 
 class NetworkFactory(object):
     """
-    Build <Network> instance from options.
+    Builds <Network> instance from options.
     """
 
     def build(self, options):
         """
-        Build <Network> instance from options.
+        Builds <Network> instance from options.
         :param options:     <dict>
         :return:            <Network>
         """
+
+    def get_default_options(self):
+        """
+        :return:    <dict>      default options
+        """
+        options = {}
