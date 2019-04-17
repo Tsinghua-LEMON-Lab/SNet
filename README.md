@@ -10,7 +10,7 @@ Refactoring repo: [SpikeNet](https://github.com/Nuullll/SNet)
 ## TODO
 
 * [x] Transplant original framework
-* Option representation: localconfig -> dict
-* Training option: pattern & background phases
-* Training option: greedy training
 * [x] Learning rule abstraction
+* [ ] Option representation: localconfig -> dict
+* [ ] Training option: pattern & background phases
+* [ ] Training option: greedy training
