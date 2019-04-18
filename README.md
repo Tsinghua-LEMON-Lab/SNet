@@ -14,4 +14,4 @@ Refactoring repo: [SpikeNet](https://github.com/Nuullll/SNet)
 * [x] `snet.dataset` module
 * [x] Option representation: localconfig -> dict
 * [x] Training option: pattern & background phases
-* [ ] Training option: greedy training
+* [x] Training option: greedy training

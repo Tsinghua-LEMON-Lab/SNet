@@ -37,6 +37,9 @@ class Network(object):
         # training / inference
         self.inference = False
 
+        # greedy training
+        self.greedy = False
+
 
 class NetworkFactory(object):
     """
@@ -57,6 +60,9 @@ class NetworkFactory(object):
 
         # instantiate synapse
         net.W = ExponentialSTDPSynapse(net.INPUT, net.OUTPUT, net)
+
+        # greedy training option
+        net.greedy = options.get('greedy', False)
 
         return net
 
