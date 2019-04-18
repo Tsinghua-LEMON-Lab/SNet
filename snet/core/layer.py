@@ -137,7 +137,7 @@ class PoissonLayer(Layer):
     def _reset(self):
         self.local_t += 1
 
-        if not self.network.inference and self.pb_phases and self.local_t >= self.t_training_image:
+        if not self.network.inference and self.pb_phases and self.local_t >= self.t_training_image and self.is_pattern:
             self.background_phase()
 
     def feed_image(self, image):
