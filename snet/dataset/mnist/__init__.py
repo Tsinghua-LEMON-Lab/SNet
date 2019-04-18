@@ -14,8 +14,7 @@ from torch.utils.data.dataset import Subset
 
 
 DATASET_DIR = os.path.join(os.path.dirname(__file__), 'data')
-if not os.path.exists(DATASET_DIR):
-    os.makedirs(DATASET_DIR)
+os.makedirs(DATASET_DIR, exist_ok=True)
 
 
 class MNISTLoader(object):
