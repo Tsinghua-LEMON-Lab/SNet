@@ -11,6 +11,7 @@ Refactoring repo: [SpikeNet](https://github.com/Nuullll/SNet)
 
 * [x] Transplant original framework
 * [x] Learning rule abstraction
+* [ ] `snet.dataset` module
 * [ ] Option representation: localconfig -> dict
 * [ ] Training option: pattern & background phases
 * [ ] Training option: greedy training
