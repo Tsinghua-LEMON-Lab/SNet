@@ -40,6 +40,22 @@ class Network(object):
         # greedy training
         self.greedy = False
 
+    def training_mode(self):
+        self.inference = False
+
+        self.OUTPUT.adaptive = True
+        self.OUTPUT.inhibition = True
+
+        self.W.static = False
+
+    def inference_mode(self):
+        self.inference = True
+
+        self.OUTPUT.adaptive = False
+        # self.OUTPUT.inhibition = False
+
+        self.W.static = True
+
 
 class NetworkFactory(object):
     """
