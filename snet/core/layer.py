@@ -93,7 +93,7 @@ class PoissonLayer(Layer):
         # get Pattern&Background Phase options
         self.pb_phases = self.options.get('pb_phases', False)
         self.pattern_firing_rate = self.options.get('pattern_firing_rate', 1.)
-        self.background_firing_rate = self.options.get('background_firing_rate', None)
+        self.background_firing_rate = self.options.get('background_firing_rate', 1.)
         self.t_background_phase = self.options.get('t_background_phase', 0)
 
         # input image fields
