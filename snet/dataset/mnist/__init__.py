@@ -33,7 +33,7 @@ class MNISTLoader(object):
         self._filter_categories()
 
     def _rescale(self):
-        size = self.options.get('size', (28, 28))
+        size = self.options.get('image_size', (28, 28))
 
         self.training_set = MNIST(DATASET_DIR, train=True, download=True, transform=transforms.Compose([
             transforms.Resize(size),
