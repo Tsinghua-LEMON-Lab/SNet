@@ -41,6 +41,10 @@ class Layer(object):
         # lateral inhibition
         self.inhibition = False
 
+    @property
+    def options(self):
+        return self.network.options
+
     def process(self):
         """
         Processes in one timestep.
@@ -86,8 +90,18 @@ class PoissonLayer(Layer):
     def __init__(self, size, net):
         super(PoissonLayer, self).__init__(size, net)
 
+        # get Pattern&Background Phase options
+        self.pb_phases = self.options.get('pb_phases', False)
+        self.pattern_firing_rate = self.options.get('pattern_firing_rate', None)
+        self.background_firing_rate = self.options.get('background_firing_rate', None)
+
+        # input image fields
         self.image = None
         self.image_norm = None
+
+        # duration options
+        self.t_training_image = self.options.get('t_training_image')
+        self.t_testing_image = self.options.get('t_testing_image')
 
     def process(self):
         self._clear()
@@ -114,15 +128,15 @@ class LIFLayer(Layer):
 
         # membrane potential related
         self.v_rest = 0.
-        self.v_th_rest = 0.
+        self.v_th_rest = self.options.get('v_th_rest')
 
         self.v = torch.ones(self.size, dtype=torch.float) * self.v_rest
         self.v_th = torch.ones_like(self.v) * self.v_th_rest
 
         # LIF params
-        self.refractory = 0
-        self.tau = None
-        self.res = None
+        self.refractory = self.options.get('refractory')
+        self.tau = self.options.get('tau')
+        self.res = self.options.get('res')
 
         # refractory related
         # firing events are allowed only when `rest_time` exceeds `refractory` period

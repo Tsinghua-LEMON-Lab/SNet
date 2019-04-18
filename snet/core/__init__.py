@@ -7,6 +7,10 @@
 # @Email: vfirst218@gmail.com
 
 
+from snet.core.layer import PoissonLayer, LIFLayer
+from snet.core.synapse import ExponentialSTDPSynapse
+
+
 class Network(object):
     """
     Spiking Neural Network model of fixed structure:
@@ -45,9 +49,20 @@ class NetworkFactory(object):
         :param options:     <dict>
         :return:            <Network>
         """
+        net = Network(options)
+
+        # instantiate layers
+        net.INPUT = PoissonLayer(options['input_number'], net)
+        net.OUTPUT = LIFLayer(options['output_number'], net)
+
+        # instantiate synapse
+        net.W = ExponentialSTDPSynapse(net.INPUT, net.OUTPUT, net)
+
+        return net
 
     def get_default_options(self):
         """
         :return:    <dict>      default options
         """
-        options = {}
+        # defined in snetapp
+        pass

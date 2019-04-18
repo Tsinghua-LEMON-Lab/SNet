@@ -15,23 +15,35 @@ class AbstractSynapse(object):
     Abstract class for synapse.
     """
 
-    def __init__(self, pre_layer, post_layer, weights, net):
+    def __init__(self, pre_layer, post_layer, net):
         """
         :param pre_layer:   <Layer>
         :param post_layer:  <Layer>
-        :param weights:     <torch.Tensor>
         :param net:         <Network>
         """
 
         self.pre_layer = pre_layer
         self.post_layer = post_layer
 
-        # weights related
-        self.weights = weights
-        self.w_min = 0.
-        self.w_max = 1.
-
         self.network = net
+
+        # weights related
+        self.w_min = self.options.get('w_min')
+        self.w_max = self.options.get('w_max')
+
+        def _init_weights(w_init):
+            weights = torch.ones(self.pre_layer.size, self.post_layer.size)
+
+            if w_init == 'min':
+                return self.w_min * weights
+            elif w_init == 'max':
+                return self.w_max * weights
+            elif w_init == 'random':
+                return self.w_min + (self.w_max - self.w_min) * torch.rand_like(weights)
+            else:
+                raise ValueError("Wrong configuration for w_init.")
+
+        self.weights = _init_weights(self.options.get('w_init'))
 
         # recording
         self._last_pre_spike_time = -torch.ones(self.pre_layer.size)    # -1 means never fired before
@@ -39,6 +51,10 @@ class AbstractSynapse(object):
 
         # static mode
         self.static = False
+
+    @property
+    def options(self):
+        return self.network.options
 
     def forward(self):
         """
@@ -84,7 +100,11 @@ class ExponentialSTDPSynapse(AbstractSynapse):
     def __init__(self, *args, **kwargs):
         super(ExponentialSTDPSynapse, self).__init__(*args, **kwargs)
 
-        # TODO: parse learning rate options.
+        # learning rate options
+        self.learning_rate_p = self.options.get('learning_rate_p')
+        self.learning_rate_m = self.options.get('learning_rate_m')
+        self.tau_p = self.options.get('tau_p')
+        self.tau_m = self.options.get('tau_m')
 
     def update_on_pre_spikes(self):
         if self.static:
@@ -105,7 +125,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         active &= window_mask
 
         # weights decrease, because pre-spikes come after post-spikes
-        dw = self.learn_rate_m * (self.weights[active] - self.w_min) * torch.exp(-dt / self.tau_m)
+        dw = self.learning_rate_m * (self.weights[active] - self.w_min) * torch.exp(-dt / self.tau_m)
         self.weights[active] -= dw
         self._clamp()
 
@@ -128,6 +148,6 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         active &= window_mask
 
         # weights decrease, because pre-spikes come after post-spikes
-        dw = self.learn_rate_p * (self.w_max - self.weights[active]) * torch.exp(-dt / self.tau_p)
+        dw = self.learning_rate_p * (self.w_max - self.weights[active]) * torch.exp(-dt / self.tau_p)
         self.weights[active] += dw
         self._clamp()
