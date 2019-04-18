@@ -92,7 +92,7 @@ class PoissonLayer(Layer):
 
         # get Pattern&Background Phase options
         self.pb_phases = self.options.get('pb_phases', False)
-        self.pattern_firing_rate = self.options.get('pattern_firing_rate', None)
+        self.pattern_firing_rate = self.options.get('pattern_firing_rate', 1.)
         self.background_firing_rate = self.options.get('background_firing_rate', None)
         self.t_background_phase = self.options.get('t_background_phase', 0)
 
@@ -100,14 +100,33 @@ class PoissonLayer(Layer):
         self.image = None
         self.image_norm = None
 
+        # phase flag
+        self.is_pattern = True
+
         # duration options
+        self.local_t = 0
         self.t_training_image = self.options.get('t_training_image')
         self.t_testing_image = self.options.get('t_testing_image')
+
+    @property
+    def finished(self):
+        if self.network.inference:
+            if self.local_t >= self.t_testing_image:
+                return True
+        else:
+            if self.pb_phases:
+                if self.local_t >= self.t_training_image + self.t_background_phase:
+                    return True
+            else:
+                if self.local_t >= self.t_training_image:
+                    return True
+
+        return False
 
     def process(self):
         self._clear()
 
-        ref = self.image / self.image_norm
+        ref = self.image / self.image_norm * self.firing_rate
 
         x = torch.rand_like(self.image, dtype=torch.float)
 
@@ -116,7 +135,33 @@ class PoissonLayer(Layer):
         self._fire_and_reset()
 
     def _reset(self):
-        pass
+        self.local_t += 1
+
+        if not self.network.inference and self.pb_phases and self.local_t >= self.t_training_image:
+            self.background_phase()
+
+    def feed_image(self, image):
+        self.image = image.view(-1)
+        self.image_norm = self.image.sum()
+        self.pattern_phase()
+
+    def pattern_phase(self):
+        self.is_pattern = True
+
+        self.local_t = 0
+
+    def background_phase(self):
+        self.is_pattern = False
+
+        self.image = 1 - self.image
+        self.image_norm = self.image.sum()
+
+    @property
+    def firing_rate(self):
+        if self.is_pattern:
+            return self.pattern_firing_rate
+
+        return self.background_firing_rate
 
 
 class LIFLayer(Layer):
@@ -199,3 +244,6 @@ class LIFLayer(Layer):
         """
         if self.adaptive:
             pass
+
+    def clear_v(self):
+        self.v = torch.ones_like(self.v) * self.v_rest

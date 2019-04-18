@@ -25,20 +25,22 @@ class Network(object):
         # save options
         self.options = options
 
-        # define network structure
-        self.INPUT = None
-        self.OUTPUT = None
+        # instantiate layers
+        self.INPUT = PoissonLayer(options['input_number'], self)
+        self.OUTPUT = LIFLayer(options['output_number'], self)
 
-        self.W = None
+        # instantiate synapse
+        self.W = ExponentialSTDPSynapse(self.INPUT, self.OUTPUT, self)
 
-        # clock
-        self.time = 0.
+        # clock (count in unit of `dt`)
+        self.dt = options.get('dt')
+        self.time = 0
 
         # training / inference
         self.inference = False
 
-        # greedy training
-        self.greedy = False
+        # greedy training option
+        self.greedy = options.get('greedy', False)
 
     def training_mode(self):
         self.inference = False
@@ -56,35 +58,30 @@ class Network(object):
 
         self.W.static = True
 
+    def feed_image(self, image):
+        self.INPUT.feed_image(image)
+        self.OUTPUT.clear_v()
 
-class NetworkFactory(object):
-    """
-    Builds <Network> instance from options.
-    """
-
-    def build(self, options):
+    def learn_current_image(self):
         """
-        Builds <Network> instance from options.
-        :param options:     <dict>
-        :return:            <Network>
+        Runs the network in timesteps, until one full iteration of current image (reaches the stimulation time of one
+        training/testing image.
+        :return:
         """
-        net = Network(options)
 
-        # instantiate layers
-        net.INPUT = PoissonLayer(options['input_number'], net)
-        net.OUTPUT = LIFLayer(options['output_number'], net)
+        while not self.INPUT.finished:
+            # processes Poisson layer
+            self.INPUT.process()
 
-        # instantiate synapse
-        net.W = ExponentialSTDPSynapse(net.INPUT, net.OUTPUT, net)
+            # modulates weights on pre-spikes
+            self.W.update_on_pre_spikes()
 
-        # greedy training option
-        net.greedy = options.get('greedy', False)
+            # TODO: feedforward
 
-        return net
+            # processes LIF layer
+            self.OUTPUT.process()
 
-    def get_default_options(self):
-        """
-        :return:    <dict>      default options
-        """
-        # defined in snetapp
-        pass
+            # modulates weights on post-spikes
+            self.W.update_on_post_spikes()
+
+            self.time += 1
