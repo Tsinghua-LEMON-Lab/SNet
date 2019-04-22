@@ -55,7 +55,7 @@ class Layer(object):
         """
         raise NotImplementedError("Layer.process() is not implemented.")
 
-    def _clear(self):
+    def next(self):
         """
         Clears output according to `firing_mask`.
         """
@@ -103,7 +103,6 @@ class PoissonLayer(Layer):
         super(PoissonLayer, self).__init__(size, net)
 
         # get Pattern&Background Phase options
-        self.pb_phases = self.options.get('pb_phases', False)
         self.pattern_firing_rate = self.options.get('pattern_firing_rate', 1.)
         self.background_firing_rate = self.options.get('background_firing_rate', 1.)
         self.t_background_phase = self.options.get('t_background_phase', 0)
@@ -122,22 +121,9 @@ class PoissonLayer(Layer):
 
     @property
     def finished(self):
-        if self.network.inference:
-            if self.local_t >= self.t_testing_image:
-                return True
-        else:
-            if self.pb_phases:
-                if self.local_t >= self.t_training_image + self.t_background_phase:
-                    return True
-            else:
-                if self.local_t >= self.t_training_image:
-                    return True
-
-        return False
+        return self.local_t >= self.duration
 
     def process(self):
-        self._clear()
-
         ref = self.image / self.image_norm * self.firing_rate
 
         x = torch.rand_like(self.image, dtype=torch.float)
@@ -149,24 +135,17 @@ class PoissonLayer(Layer):
     def _reset(self):
         self.local_t += 1
 
-        if not self.network.inference and self.pb_phases and self.local_t >= self.t_training_image and self.is_pattern:
-            self.background_phase()
-
     def feed_image(self, image):
         self.image = image.view(-1)
         self.image_norm = self.image.sum()
-        self.pattern_phase()
 
     def pattern_phase(self):
         self.is_pattern = True
-
         self.local_t = 0
 
     def background_phase(self):
         self.is_pattern = False
-
-        self.image = 1 - self.image
-        self.image_norm = self.image.sum()
+        self.local_t = 0
 
     @property
     def firing_rate(self):
@@ -174,6 +153,16 @@ class PoissonLayer(Layer):
             return self.pattern_firing_rate
 
         return self.background_firing_rate
+
+    @property
+    def duration(self):
+        if self.network.inference:
+            return self.t_testing_image
+
+        if self.is_pattern:
+            return self.t_training_image
+
+        return self.t_background_phase
 
 
 class LIFLayer(Layer):
@@ -214,8 +203,6 @@ class LIFLayer(Layer):
         """
         Leaks, integrates, and fires.
         """
-        self._clear()
-
         # leak
         self.v -= (self.v - self.v_rest) / self.tau
 

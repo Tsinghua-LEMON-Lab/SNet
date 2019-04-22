@@ -96,6 +96,7 @@ class AbstractSynapse(object):
         image_size = self.network.options.get('image_size', (28, 28))
 
         plt.figure(1)
+        plt.clf()
         for i in range(output_num):
             plt.subplot(row_num, col_num, i + 1)
             plt.matshow(self.weights[:, i].view(*image_size), fignum=False, vmin=self.w_min, vmax=self.w_max)

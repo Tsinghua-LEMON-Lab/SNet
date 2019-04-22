@@ -67,14 +67,21 @@ class Network(object):
         Runs the network in timesteps, until one full iteration of current image (reaches the stimulation time of one
         training/testing image.
         """
-        while not self.INPUT.finished:
-            # processes Poisson layer
-            self.INPUT.process()
+        self.learn_pattern()
 
-            # modulates weights on pre-spikes
-            self.W.update_on_pre_spikes()
+        self.post_learn()
 
-            # feeds forward
+        self.learn_background()
+
+    def learn_in_dt(self, forward=True):
+        # processes Poisson layer
+        self.INPUT.process()
+
+        # modulates weights on pre-spikes
+        self.W.update_on_pre_spikes()
+
+        # feeds forward
+        if forward:
             self.W.forward()
 
             # processes LIF layer
@@ -83,8 +90,28 @@ class Network(object):
             # modulates weights on post-spikes
             self.W.update_on_post_spikes()
 
-            self.time += 1
+        self.time += 1
 
+        self.INPUT.next()
+        self.OUTPUT.next()
+
+    def learn_pattern(self):
+        self.INPUT.pattern_phase()
+
+        while not self.INPUT.finished:
+            self.learn_in_dt()
+
+            if self.OUTPUT.spike_counts.sum() >= 1:
+                return
+
+    def learn_background(self):
+        self.INPUT.feed_image(1 - self.INPUT.image)
+        self.INPUT.background_phase()
+
+        while not self.INPUT.finished:
+            self.learn_in_dt(forward=False)
+
+    def post_learn(self):
         # track
         self.OUTPUT.track()
 
