@@ -101,8 +101,9 @@ class Network(object):
         while not self.INPUT.finished:
             self.learn_in_dt()
 
-            if self.OUTPUT.spike_counts.sum() >= 1:
-                return
+            if self.greedy:
+                if self.OUTPUT.spike_counts.sum() >= 1:
+                    return
 
     def learn_background(self):
         self.INPUT.feed_image(1 - self.INPUT.image)
