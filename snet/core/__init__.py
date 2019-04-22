@@ -66,9 +66,7 @@ class Network(object):
         """
         Runs the network in timesteps, until one full iteration of current image (reaches the stimulation time of one
         training/testing image.
-        :return:
         """
-
         while not self.INPUT.finished:
             # processes Poisson layer
             self.INPUT.process()
@@ -76,7 +74,8 @@ class Network(object):
             # modulates weights on pre-spikes
             self.W.update_on_pre_spikes()
 
-            # TODO: feedforward
+            # feeds forward
+            self.W.forward()
 
             # processes LIF layer
             self.OUTPUT.process()
@@ -85,3 +84,9 @@ class Network(object):
             self.W.update_on_post_spikes()
 
             self.time += 1
+
+        # track
+        self.OUTPUT.track()
+
+        # adapt thresholds
+        self.OUTPUT.adapt()

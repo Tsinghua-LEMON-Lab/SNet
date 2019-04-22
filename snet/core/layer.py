@@ -41,6 +41,10 @@ class Layer(object):
         # lateral inhibition
         self.inhibition = False
 
+        # trackers
+        self.tracker_size = 100
+        self.spike_counts_history = []
+
     @property
     def options(self):
         return self.network.options
@@ -80,6 +84,14 @@ class Layer(object):
 
     def clear_spike_counts(self):
         self.spike_counts = torch.zeros_like(self.spike_counts)
+
+    def track(self):
+        self.spike_counts_history.append(self.spike_counts)
+
+        if len(self.spike_counts_history) > self.tracker_size:
+            self.spike_counts_history.pop(0)
+
+        self.clear_spike_counts()
 
 
 class PoissonLayer(Layer):
@@ -243,7 +255,16 @@ class LIFLayer(Layer):
         Adapts thresholds.
         """
         if self.adaptive:
-            pass
+            duration = self.network.INPUT.t_training_time
+
+            n = len(self.spike_counts_history)
+
+            history = torch.stack(self.spike_counts_history)
+
+            a = history.sum(0) / (n * duration)
+            t = 1. / (self.size * duration)
+
+            self.v_th += 0.5 * (a - t)
 
     def clear_v(self):
         self.v = torch.ones_like(self.v) * self.v_rest
