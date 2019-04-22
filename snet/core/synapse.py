@@ -8,6 +8,8 @@
 
 
 import torch
+import math
+import matplotlib.pyplot as plt
 
 
 class AbstractSynapse(object):
@@ -88,8 +90,17 @@ class AbstractSynapse(object):
         """
         Plots weight map.
         """
-        # TODO: plot weight map.
-        pass
+        output_num = self.network.OUTPUT.size
+        col_num = math.ceil(math.sqrt(output_num))
+        row_num = math.ceil(output_num / col_num)
+        image_size = self.network.options.get('image_size', (28, 28))
+
+        plt.figure(1)
+        for i in range(output_num):
+            plt.subplot(row_num, col_num, i + 1)
+            plt.matshow(self.weights[:, i].view(*image_size), fignum=False, vmin=self.w_min, vmax=self.w_max)
+
+        plt.pause(0.5)
 
 
 class ExponentialSTDPSynapse(AbstractSynapse):
