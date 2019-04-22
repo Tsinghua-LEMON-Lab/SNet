@@ -125,8 +125,9 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         active &= window_mask
 
         # weights decrease, because pre-spikes come after post-spikes
-        dw = self.learning_rate_m * (self.weights[active] - self.w_min) * torch.exp(-dt / self.tau_m)
-        self.weights[active] -= dw
+        dw = self.learning_rate_m * (self.weights - self.w_min) * torch.exp(-dt / self.tau_m)
+        dw.masked_fill_(~active, 0)
+        self.weights -= dw
         self._clamp()
 
     def update_on_post_spikes(self):
@@ -148,6 +149,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         active &= window_mask
 
         # weights decrease, because pre-spikes come after post-spikes
-        dw = self.learning_rate_p * (self.w_max - self.weights[active]) * torch.exp(-dt / self.tau_p)
-        self.weights[active] += dw
+        dw = self.learning_rate_p * (self.w_max - self.weights) * torch.exp(-dt / self.tau_p)
+        dw.masked_fill_(~active, 0)
+        self.weights += dw
         self._clamp()

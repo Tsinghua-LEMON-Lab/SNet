@@ -255,7 +255,7 @@ class LIFLayer(Layer):
         Adapts thresholds.
         """
         if self.adaptive:
-            duration = self.network.INPUT.t_training_time
+            duration = self.network.INPUT.t_training_image
 
             n = len(self.spike_counts_history)
 
