@@ -9,6 +9,8 @@
 
 from snet.core.layer import PoissonLayer, LIFLayer
 from snet.core.synapse import ExponentialSTDPSynapse
+import os
+import torch
 
 
 class Network(object):
@@ -118,3 +120,12 @@ class Network(object):
 
         # adapt thresholds
         self.OUTPUT.adapt()
+
+    def save_model(self, path, prefix=''):
+        # save weights
+        weights_file = os.path.join(path, prefix + 'weights.pt')
+        torch.save(self.W.weights, weights_file)
+
+        # save thresholds
+        v_th_file = os.path.join(path, prefix + 'v_th.pt')
+        torch.save(self.OUTPUT.v_th, v_th_file)
