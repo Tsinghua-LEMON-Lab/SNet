@@ -11,6 +11,7 @@ from snet.core.layer import PoissonLayer, LIFLayer
 from snet.core.synapse import ExponentialSTDPSynapse
 import os
 import torch
+import pickle
 
 
 class Network(object):
@@ -129,3 +130,7 @@ class Network(object):
         # save thresholds
         v_th_file = os.path.join(path, prefix + 'v_th.pt')
         torch.save(self.OUTPUT.v_th, v_th_file)
+
+        # pickling <Network> object
+        with open(os.path.join(path, prefix + 'network.mdl'), 'wb') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
