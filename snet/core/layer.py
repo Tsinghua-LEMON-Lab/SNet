@@ -44,6 +44,9 @@ class Layer(object):
         # trackers
         self.tracker_size = 100
         self.spike_counts_history = []
+        self.time_history = []
+
+        self.local_t = 0
 
     @property
     def options(self):
@@ -87,11 +90,14 @@ class Layer(object):
 
     def track(self):
         self.spike_counts_history.append(self.spike_counts)
+        self.time_history.append(self.local_t)
 
         if len(self.spike_counts_history) > self.tracker_size:
             self.spike_counts_history.pop(0)
+            self.time_history.pop(0)
 
         self.clear_spike_counts()
+        self.local_t = 0
 
 
 class PoissonLayer(Layer):
@@ -115,7 +121,6 @@ class PoissonLayer(Layer):
         self.is_pattern = True
 
         # duration options
-        self.local_t = 0
         self.t_training_image = self.options.get('t_training_image')
         self.t_testing_image = self.options.get('t_testing_image')
 
@@ -237,21 +242,22 @@ class LIFLayer(Layer):
         self.v[self.firing_mask] = self.v_rest
         self._resting_time[self.firing_mask] = 0
 
+        self.local_t += 1
+
     def adapt(self):
         """
         Adapts thresholds.
         """
         if self.adaptive:
-            duration = self.network.INPUT.t_training_image
-
-            n = len(self.spike_counts_history)
+            duration = self.network.INPUT.t_training_image + self.network.INPUT.t_background_phase
 
             history = torch.stack(self.spike_counts_history)
+            time_history = torch.tensor(self.time_history).float()
 
-            a = history.sum(0) / (n * duration)
+            a = history.sum(0) / time_history.sum()
             t = 1. / (self.size * duration)
 
-            self.v_th += 0.5 * (a - t)
+            self.v_th += 0.1 * (a - t)
 
     def clear_v(self):
         self.v = torch.ones_like(self.v) * self.v_rest

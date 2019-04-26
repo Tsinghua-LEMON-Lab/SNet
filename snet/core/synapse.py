@@ -97,7 +97,7 @@ class AbstractSynapse(object):
 
         plt.figure(1)
         plt.clf()
-        plt.imshow(w.permute(1, 2, 0))
+        plt.imshow(w.permute(1, 2, 0), vmin=self.w_min, vmax=self.w_max)
 
         if out_file:
             plt.savefig(out_file)
