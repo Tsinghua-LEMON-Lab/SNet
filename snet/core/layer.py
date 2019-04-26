@@ -196,6 +196,7 @@ class LIFLayer(Layer):
 
         # adaptive thresholds
         self.adaptive = True
+        self.adapt_factor = self.options.get('adapt_factor', 1.)
 
         # lateral inhibition
         self.inhibition = True
@@ -255,7 +256,7 @@ class LIFLayer(Layer):
             time_history = torch.tensor(self.time_history).float()
 
             a = history.sum(0) / time_history.sum()
-            t = 1. / (self.size * duration)
+            t = self.adapt_factor / (self.size * duration)
 
             self.v_th += 0.1 * (a - t)
 
