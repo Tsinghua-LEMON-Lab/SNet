@@ -46,18 +46,24 @@ class Network(object):
         self.greedy = options.get('greedy', False)
 
     def training_mode(self):
+        self.time = 0
+
         self.inference = False
 
         self.OUTPUT.adaptive = True
         self.OUTPUT.inhibition = True
+        self.OUTPUT.tracker_size = self.options.get('tracker_size')
 
         self.W.static = False
 
     def inference_mode(self):
+        self.time = 0
+
         self.inference = True
 
         self.OUTPUT.adaptive = False
         # self.OUTPUT.inhibition = False
+        self.OUTPUT.tracker_size = 1
 
         self.W.static = True
 
@@ -65,12 +71,12 @@ class Network(object):
         self.INPUT.feed_image(image)
         self.OUTPUT.clear_v()
 
-    def learn_current_image(self):
+    def learn_current_image(self, force_greedy=False):
         """
         Runs the network in timesteps, until one full iteration of current image (reaches the stimulation time of one
         training/testing image.
         """
-        self.learn_pattern()
+        self.learn_pattern(force_greedy)
 
         self.post_learn()
 
@@ -98,15 +104,23 @@ class Network(object):
         self.INPUT.next()
         self.OUTPUT.next()
 
-    def learn_pattern(self):
+    def learn_pattern(self, force_greedy=False):
         self.INPUT.pattern_phase()
 
-        while not self.INPUT.finished:
-            self.learn_in_dt()
+        if not force_greedy:
+            while not self.INPUT.finished:
+                self.learn_in_dt()
 
-            if self.greedy:
-                if self.OUTPUT.spike_counts.sum() >= 1:
-                    return
+                if not self.inference and self.greedy:
+                    if self.OUTPUT.spike_counts.sum() >= 1:
+                        return
+        else:
+            while True:
+                self.learn_in_dt()
+
+                if self.greedy:
+                    if self.OUTPUT.spike_counts.sum() >= 1:
+                        return
 
     def learn_background(self):
         self.INPUT.feed_image(1 - self.INPUT.image)
@@ -132,5 +146,5 @@ class Network(object):
         torch.save(self.OUTPUT.v_th, v_th_file)
 
         # pickling <Network> object
-        with open(os.path.join(path, prefix + 'network.mdl'), 'wb') as f:
+        with open(os.path.join(path, prefix + 'network.pickle'), 'wb') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
