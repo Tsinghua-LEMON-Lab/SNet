@@ -93,11 +93,12 @@ class AbstractSynapse(object):
         """
         image_size = self.network.options.get('image_size', (28, 28))
 
-        w = torchvision.utils.make_grid(self.weights.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=4)
+        w = torchvision.utils.make_grid(self.weights.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=4,
+                                        normalize=True, range=(self.w_min, self.w_max))
 
         plt.figure(1)
         plt.clf()
-        plt.imshow(w.permute(1, 2, 0), vmin=self.w_min, vmax=self.w_max)
+        plt.imshow(w.permute(1, 2, 0)[:, :, 0], cmap='viridis')
 
         if out_file:
             plt.savefig(out_file)
