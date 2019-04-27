@@ -162,7 +162,10 @@ class PoissonLayer(Layer):
     @property
     def duration(self):
         if self.network.inference:
-            return self.t_testing_image
+            if self.is_pattern:
+                return self.t_testing_image
+            else:
+                return 0
 
         if self.is_pattern:
             return self.t_training_image
