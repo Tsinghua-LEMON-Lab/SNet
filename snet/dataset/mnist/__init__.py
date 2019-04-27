@@ -32,6 +32,9 @@ class MNISTLoader(object):
         # filter categories
         self._filter_categories()
 
+        # single learning mode
+        self._filter_single()
+
     def _rescale(self):
         size = self.options.get('image_size', (28, 28))
 
@@ -60,3 +63,13 @@ class MNISTLoader(object):
 
         self.training_set = _filter(self.training_set)
         self.testing_set = _filter(self.testing_set)
+
+    def _filter_single(self):
+        single = self.options.get('single', False)
+
+        if single:
+            # take the first one, for now
+            self.training_set = Subset(self.training_set, [0])
+
+            # testing set is disabled
+            self.testing_set = self.training_set
