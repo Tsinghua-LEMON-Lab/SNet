@@ -67,9 +67,10 @@ class Network(object):
 
         self.W.static = True
 
-    def feed_image(self, image):
+    def feed_image(self, image, clear_v=True):
         self.INPUT.feed_image(image)
-        self.OUTPUT.clear_v()
+        if clear_v:
+            self.OUTPUT.clear_v()
 
     def learn_current_image(self, force_greedy=False):
         """
