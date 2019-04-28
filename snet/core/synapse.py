@@ -118,6 +118,26 @@ class AbstractSynapse(object):
 
         plt.pause(0.5)
 
+    def plot_update_map(self, out_file=None):
+        image_size = self.network.options.get('image_size', (28, 28))
+
+        m = torchvision.utils.make_grid(self.update_counts.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=4,
+                                        normalize=True)
+
+        m = m.permute(1, 2, 0)[:, :, 0]
+        m = (self.update_counts.max() - self.update_counts.min()) * m + self.update_counts.min()
+
+        plt.figure(2)
+        plt.clf()
+        plt.matshow(m, fignum=2, cmap='Reds')
+        plt.colorbar()
+        plt.axis('off')
+
+        if out_file:
+            plt.savefig(out_file)
+
+        plt.pause(0.5)
+
 
 class ExponentialSTDPSynapse(AbstractSynapse):
     """
