@@ -121,9 +121,16 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         self.tau_p = self.options.get('tau_p')
         self.tau_m = self.options.get('tau_m')
 
+        self.decay = self.options.get('decay', 0.)
+
     def update_on_pre_spikes(self):
         if self.static:
             return
+
+        # decay first
+        dw = self.decay * (self.w_max - self.w_min)
+        self.weights -= dw
+        self._clamp()
 
         # record new pre-spikes
         self._last_pre_spike_time[self.pre_layer.firing_mask] = self.time
