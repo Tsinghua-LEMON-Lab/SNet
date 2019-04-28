@@ -99,6 +99,7 @@ class AbstractSynapse(object):
         plt.figure(1)
         plt.clf()
         plt.imshow(w.permute(1, 2, 0)[:, :, 0], cmap='viridis')
+        plt.axis('off')
 
         if out_file:
             plt.savefig(out_file)
