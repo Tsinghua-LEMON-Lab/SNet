@@ -58,6 +58,8 @@ class AbstractSynapse(object):
 
         self.weights = _init_weights(self.options.get('w_init'))
 
+        self.update_counts = torch.zeros_like(self.weights)
+
         # recording
         self._last_pre_spike_time = -torch.ones(self.pre_layer.size)    # -1 means never fired before
         self._last_post_spike_time = -torch.ones(self.post_layer.size)
@@ -156,6 +158,8 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         window_mask = (dt <= 2 * self.tau_m)
         active &= window_mask
 
+        self.update_counts[active] += 1
+
         # weights decrease, because pre-spikes come after post-spikes
         dw = self.learning_rate_m * (self.weights - self.w_min) * torch.exp(-dt / self.tau_m)
         dw.masked_fill_(~active, 0)
@@ -179,6 +183,8 @@ class ExponentialSTDPSynapse(AbstractSynapse):
 
         window_mask = (dt <= 2 * self.tau_p)
         active &= window_mask
+
+        self.update_counts[active] += 1
 
         # weights decrease, because pre-spikes come after post-spikes
         dw = self.learning_rate_p * (self.w_max - self.weights) * torch.exp(-dt / self.tau_p)
