@@ -9,7 +9,7 @@
 
 import torch
 import torchvision
-import math
+import os
 import matplotlib.pyplot as plt
 
 
@@ -43,6 +43,16 @@ class AbstractSynapse(object):
                 return self.w_max * weights
             elif w_init == 'random':
                 return self.w_min + (self.w_max - self.w_min) * torch.rand_like(weights)
+            elif w_init == 'fixed':
+                cwd = os.path.dirname(__file__)
+                weights_file = os.path.join(cwd, 'default_weights.pt')
+
+                if os.path.exists(weights_file):
+                    return torch.load(weights_file)
+                else:
+                    weights = self.w_min + (self.w_max - self.w_min) * torch.rand_like(weights)
+                    torch.save(weights, weights_file)
+                    return weights
             else:
                 raise ValueError("Wrong configuration for w_init.")
 
