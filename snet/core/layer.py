@@ -261,7 +261,7 @@ class LIFLayer(Layer):
             a = history.sum(0) / time_history.sum()
             t = self.adapt_factor / (self.size * duration)
 
-            self.v_th += 0.1 * (a - t)
+            self.v_th += 10. * (a - t)
 
     def clear_v(self):
         self.v = torch.ones_like(self.v) * self.v_rest
