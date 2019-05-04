@@ -11,6 +11,7 @@ import torch
 import torchvision
 import os
 import matplotlib.pyplot as plt
+from math import sqrt, ceil
 
 
 class AbstractSynapse(object):
@@ -104,8 +105,10 @@ class AbstractSynapse(object):
         Plots weight map.
         """
         image_size = self.network.options.get('image_size', (28, 28))
+        output_number = self.network.OUTPUT.size
+        cols = ceil(sqrt(output_number))
 
-        w = torchvision.utils.make_grid(self.weights.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=4,
+        w = torchvision.utils.make_grid(self.weights.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=cols,
                                         normalize=True, range=(self.w_min, self.w_max))
 
         plt.figure(1)
@@ -120,8 +123,10 @@ class AbstractSynapse(object):
 
     def plot_update_map(self, out_file=None):
         image_size = self.network.options.get('image_size', (28, 28))
+        output_number = self.network.OUTPUT.size
+        cols = ceil(sqrt(output_number))
 
-        m = torchvision.utils.make_grid(self.update_counts.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=4,
+        m = torchvision.utils.make_grid(self.update_counts.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=cols,
                                         normalize=True)
 
         m = m.permute(1, 2, 0)[:, :, 0]
