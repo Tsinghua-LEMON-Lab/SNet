@@ -46,7 +46,7 @@ class Network(object):
         self.greedy = options.get('greedy', False)
 
     def training_mode(self):
-        self.time = 0
+        # self.time = 0
 
         self.inference = False
 
