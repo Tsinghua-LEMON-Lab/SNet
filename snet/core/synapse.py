@@ -12,6 +12,7 @@ import torchvision
 import os
 import matplotlib.pyplot as plt
 from math import sqrt, ceil
+from torch.distributions.normal import Normal
 
 
 class AbstractSynapse(object):
@@ -215,4 +216,68 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         dw = self.learning_rate_p * (self.w_max - self.weights) * torch.exp(-dt / self.tau_p)
         dw.masked_fill_(~active, 0)
         self.weights += dw
+        self._clamp()
+
+
+class RRAMSynapse(ExponentialSTDPSynapse):
+    def __init__(self, *args, **kwargs):
+        super(RRAMSynapse, self).__init__(*args, **kwargs)
+
+        self.update_variation = self.options.get('update_variation', 0.5)
+
+        self.distribution = Normal(1.0, self.update_variation)
+
+    def _clamp(self):
+        self.weights.clamp_(min=0.)
+
+    def update_on_pre_spikes(self):
+        if self.static:
+            return
+
+        # record new pre-spikes
+        self._last_pre_spike_time[self.pre_layer.firing_mask] = self.time
+
+        # mask
+        post_active = self._last_post_spike_time >= 0
+        active = torch.ger(self.pre_layer.firing_mask, post_active)  # new pre-spikes and fired post-spikes
+
+        # calculate timing difference (where new pre-spikes timing is now)
+        dt = (self._last_pre_spike_time.repeat(self.post_layer.size, 1).t() -
+              self._last_post_spike_time.repeat(self.pre_layer.size, 1))
+
+        window_mask = (dt <= 2 * self.tau_m)
+        active &= window_mask
+
+        self.update_counts[active] += 1
+
+        # weights decrease, because pre-spikes come after post-spikes
+        dw = self.learning_rate_m * (self.weights - self.w_min) * torch.exp(-dt / self.tau_m)
+        dw.masked_fill_(~active, 0)
+        self.weights -= dw * self.distribution.sample(dw.shape)
+        self._clamp()
+
+    def update_on_post_spikes(self):
+        if self.static:
+            return
+
+        # record new post-spikes
+        self._last_post_spike_time[self.post_layer.firing_mask] = self.time
+
+        # mask
+        pre_active = self._last_pre_spike_time >= 0
+        active = torch.ger(pre_active, self.post_layer.firing_mask)     # fired pre-spikes and new post-spikes
+
+        # calculate timing difference (where new post-spikes timing is now)
+        dt = (self._last_post_spike_time.repeat(self.pre_layer.size, 1) -
+              self._last_pre_spike_time.repeat(self.post_layer.size, 1).t())
+
+        window_mask = (dt <= 2 * self.tau_p)
+        active &= window_mask
+
+        self.update_counts[active] += 1
+
+        # weights decrease, because pre-spikes come after post-spikes
+        dw = self.learning_rate_p * (self.w_max - self.weights) * torch.exp(-dt / self.tau_p)
+        dw.masked_fill_(~active, 0)
+        self.weights += dw * self.distribution.sample(dw.shape)
         self._clamp()

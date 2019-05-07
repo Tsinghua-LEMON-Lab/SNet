@@ -8,7 +8,7 @@
 
 
 from snet.core.layer import PoissonLayer, LIFLayer
-from snet.core.synapse import ExponentialSTDPSynapse
+from snet.core.synapse import ExponentialSTDPSynapse, RRAMSynapse
 import os
 import torch
 import pickle
@@ -33,7 +33,11 @@ class Network(object):
         self.OUTPUT = LIFLayer(options['output_number'], self)
 
         # instantiate synapse
-        self.W = ExponentialSTDPSynapse(self.INPUT, self.OUTPUT, self)
+        update_variation = self.options.get('update_variation', 0.)
+        if update_variation > 0:
+            self.W = RRAMSynapse(self.INPUT, self.OUTPUT, self)
+        else:
+            self.W = ExponentialSTDPSynapse(self.INPUT, self.OUTPUT, self)
 
         # clock (count in unit of `dt`)
         self.dt = options.get('dt')
