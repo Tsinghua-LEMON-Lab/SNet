@@ -60,6 +60,14 @@ class AbstractSynapse(object):
 
         self.weights = _init_weights(self.options.get('w_init'))
 
+        self.failure_rate = self.options.get('failure_rate', 0.)
+        failure_count = int(self.weights.numel() * self.failure_rate)
+        indices = torch.randperm(self.weights.numel())[:failure_count]
+        self.failure_mask = torch.zeros_like(self.weights, dtype=torch.uint8).view(-1)
+        if len(indices) > 0:
+            self.failure_mask[indices] = 1
+        self.failure_mask = self.failure_mask.view(*self.weights.shape)
+
         self.update_counts = torch.zeros_like(self.weights)
 
         # recording
@@ -136,7 +144,8 @@ class AbstractSynapse(object):
         plt.figure(2)
         plt.clf()
         plt.matshow(m, fignum=2, cmap='Reds')
-        plt.colorbar()
+        cb = plt.colorbar()
+        cb.ax.tick_params(labelsize=20)
         plt.axis('off')
 
         if out_file:
@@ -167,7 +176,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
 
         # decay first
         dw = self.decay * (self.w_max - self.w_min)
-        self.weights -= dw
+        self.weights[~self.failure_mask] -= dw
         self._clamp()
 
         # record new pre-spikes
@@ -183,6 +192,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
 
         window_mask = (dt <= 2 * self.tau_m)
         active &= window_mask
+        active &= ~self.failure_mask
 
         self.update_counts[active] += 1
 
@@ -209,6 +219,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
 
         window_mask = (dt <= 2 * self.tau_p)
         active &= window_mask
+        active &= ~self.failure_mask
 
         self.update_counts[active] += 1
 
@@ -247,6 +258,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         window_mask = (dt <= 2 * self.tau_m)
         active &= window_mask
+        active &= ~self.failure_mask
 
         self.update_counts[active] += 1
 
@@ -273,6 +285,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         window_mask = (dt <= 2 * self.tau_p)
         active &= window_mask
+        active &= ~self.failure_mask
 
         self.update_counts[active] += 1
 
