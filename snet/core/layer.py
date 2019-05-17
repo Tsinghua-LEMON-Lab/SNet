@@ -35,7 +35,7 @@ class Layer(object):
         self.o = torch.ones(self.size) * self.o_rest     # output port
 
         # spike related
-        self.firing_mask = torch.zeros(self.size).to(dtype=uint8)
+        self.firing_mask = torch.zeros(self.size).to(uint8)
         self.spike_counts = torch.zeros(self.size)
 
         # adaptive thresholds
@@ -198,7 +198,7 @@ class LIFLayer(Layer):
 
         # refractory related
         # firing events are allowed only when `rest_time` exceeds `refractory` period
-        self._resting_time = torch.ones(self.size).to(dtype=int32) * self.refractory
+        self._resting_time = torch.ones(self.size).to(int32) * self.refractory
 
         # adaptive thresholds
         self.adaptive = True
