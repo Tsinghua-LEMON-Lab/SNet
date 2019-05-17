@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from math import sqrt, ceil
 from torch.distributions.normal import Normal
 torch.set_default_tensor_type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor)
+dev = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 class AbstractSynapse(object):
@@ -184,14 +185,14 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         self._last_pre_spike_time[self.pre_layer.firing_mask] = self.time
 
         # mask
-        post_active = self._last_post_spike_time >= 0
-        active = torch.ger(self.pre_layer.firing_mask, post_active)  # new pre-spikes and fired post-spikes
+        post_active = (self._last_post_spike_time >= 0).to(device=dev)
+        active = torch.ger(self.pre_layer.firing_mask.float(), post_active.float()).byte()  # new pre-spikes and fired post-spikes
 
         # calculate timing difference (where new pre-spikes timing is now)
         dt = (self._last_pre_spike_time.repeat(self.post_layer.size, 1).t() -
               self._last_post_spike_time.repeat(self.pre_layer.size, 1))
 
-        window_mask = (dt <= 2 * self.tau_m)
+        window_mask = (dt <= 2 * self.tau_m).to(device=dev)
         active &= window_mask
         active &= ~self.failure_mask
 
@@ -211,14 +212,14 @@ class ExponentialSTDPSynapse(AbstractSynapse):
         self._last_post_spike_time[self.post_layer.firing_mask] = self.time
 
         # mask
-        pre_active = self._last_pre_spike_time >= 0
-        active = torch.ger(pre_active, self.post_layer.firing_mask)     # fired pre-spikes and new post-spikes
+        pre_active = (self._last_pre_spike_time >= 0).to(device=dev)
+        active = torch.ger(pre_active.float(), self.post_layer.firing_mask.float()).byte()     # fired pre-spikes and new post-spikes
 
         # calculate timing difference (where new post-spikes timing is now)
         dt = (self._last_post_spike_time.repeat(self.pre_layer.size, 1) -
               self._last_pre_spike_time.repeat(self.post_layer.size, 1).t())
 
-        window_mask = (dt <= 2 * self.tau_p)
+        window_mask = (dt <= 2 * self.tau_p).to(device=dev)
         active &= window_mask
         active &= ~self.failure_mask
 
@@ -250,14 +251,14 @@ class RRAMSynapse(ExponentialSTDPSynapse):
         self._last_pre_spike_time[self.pre_layer.firing_mask] = self.time
 
         # mask
-        post_active = self._last_post_spike_time >= 0
-        active = torch.ger(self.pre_layer.firing_mask, post_active)  # new pre-spikes and fired post-spikes
+        post_active = (self._last_post_spike_time >= 0).to(device=dev)
+        active = torch.ger(self.pre_layer.firing_mask.float(), post_active.float()).byte()  # new pre-spikes and fired post-spikes
 
         # calculate timing difference (where new pre-spikes timing is now)
         dt = (self._last_pre_spike_time.repeat(self.post_layer.size, 1).t() -
               self._last_post_spike_time.repeat(self.pre_layer.size, 1))
 
-        window_mask = (dt <= 2 * self.tau_m)
+        window_mask = (dt <= 2 * self.tau_m).to(device=dev)
         active &= window_mask
         active &= ~self.failure_mask
 
@@ -277,14 +278,14 @@ class RRAMSynapse(ExponentialSTDPSynapse):
         self._last_post_spike_time[self.post_layer.firing_mask] = self.time
 
         # mask
-        pre_active = self._last_pre_spike_time >= 0
-        active = torch.ger(pre_active, self.post_layer.firing_mask)     # fired pre-spikes and new post-spikes
+        pre_active = (self._last_pre_spike_time >= 0).to(device=dev)
+        active = torch.ger(pre_active.float(), self.post_layer.firing_mask.float())     # fired pre-spikes and new post-spikes
 
         # calculate timing difference (where new post-spikes timing is now)
         dt = (self._last_post_spike_time.repeat(self.pre_layer.size, 1) -
               self._last_pre_spike_time.repeat(self.post_layer.size, 1).t())
 
-        window_mask = (dt <= 2 * self.tau_p)
+        window_mask = (dt <= 2 * self.tau_p).to(device=dev)
         active &= window_mask
         active &= ~self.failure_mask
 
