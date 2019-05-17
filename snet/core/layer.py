@@ -9,6 +9,8 @@
 
 import torch
 torch.set_default_tensor_type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor)
+uint8 = torch.cuda.ByteTensor if torch.cuda.is_available() else torch.ByteTensor
+int32 = torch.cuda.IntTensor if torch.cuda.is_available() else torch.IntTensor
 
 
 class Layer(object):
@@ -33,7 +35,7 @@ class Layer(object):
         self.o = torch.ones(self.size) * self.o_rest     # output port
 
         # spike related
-        self.firing_mask = torch.zeros(self.size).byte()
+        self.firing_mask = torch.zeros(self.size).to(dtype=uint8)
         self.spike_counts = torch.zeros(self.size)
 
         # adaptive thresholds
@@ -196,7 +198,7 @@ class LIFLayer(Layer):
 
         # refractory related
         # firing events are allowed only when `rest_time` exceeds `refractory` period
-        self._resting_time = torch.ones(self.size).int() * self.refractory
+        self._resting_time = torch.ones(self.size).to(dtype=int32) * self.refractory
 
         # adaptive thresholds
         self.adaptive = True
