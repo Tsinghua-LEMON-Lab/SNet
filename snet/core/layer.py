@@ -142,8 +142,7 @@ class PoissonLayer(Layer):
         self.local_t += 1
 
     def feed_image(self, image):
-        image.dtype = torch.get_default_dtype()
-        self.image = image.view(-1)
+        self.image = image.to(torch.get_default_dtype()).view(-1)
         self.image_norm = self.image.sum()
 
     def pattern_phase(self):
