@@ -8,6 +8,7 @@
 
 
 import torch
+torch.set_default_tensor_type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor)
 
 
 class Layer(object):
@@ -28,12 +29,12 @@ class Layer(object):
         self.o_rest = 0.
         self.o_peak = 1.
 
-        self.i = torch.zeros(self.size, dtype=torch.float)                  # input port
-        self.o = torch.ones(self.size, dtype=torch.float) * self.o_rest     # output port
+        self.i = torch.zeros(self.size)                  # input port
+        self.o = torch.ones(self.size) * self.o_rest     # output port
 
         # spike related
-        self.firing_mask = torch.zeros(self.size, dtype=torch.uint8)
-        self.spike_counts = torch.zeros(self.size, dtype=torch.float)
+        self.firing_mask = torch.zeros(self.size).byte()
+        self.spike_counts = torch.zeros(self.size)
 
         # adaptive thresholds
         self.adaptive = False
@@ -131,7 +132,7 @@ class PoissonLayer(Layer):
     def process(self):
         ref = self.image / self.image_norm * self.firing_rate
 
-        x = torch.rand_like(self.image, dtype=torch.float)
+        x = torch.rand_like(self.image)
 
         self.firing_mask = (x <= ref)
 
@@ -185,7 +186,7 @@ class LIFLayer(Layer):
         self.v_rest = 0.
         self.v_th_rest = self.options.get('v_th_rest')
 
-        self.v = torch.ones(self.size, dtype=torch.float) * self.v_rest
+        self.v = torch.ones(self.size) * self.v_rest
         self.v_th = torch.ones_like(self.v) * self.v_th_rest
 
         # LIF params
@@ -195,7 +196,7 @@ class LIFLayer(Layer):
 
         # refractory related
         # firing events are allowed only when `rest_time` exceeds `refractory` period
-        self._resting_time = torch.ones(self.size, dtype=torch.int) * self.refractory
+        self._resting_time = torch.ones(self.size).int() * self.refractory
 
         # adaptive thresholds
         self.adaptive = True

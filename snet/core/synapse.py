@@ -13,6 +13,7 @@ import os
 import matplotlib.pyplot as plt
 from math import sqrt, ceil
 from torch.distributions.normal import Normal
+torch.set_default_tensor_type(torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor)
 
 
 class AbstractSynapse(object):
@@ -63,7 +64,7 @@ class AbstractSynapse(object):
         self.failure_rate = self.options.get('failure_rate', 0.)
         failure_count = int(self.weights.numel() * self.failure_rate)
         indices = torch.randperm(self.weights.numel())[:failure_count]
-        self.failure_mask = torch.zeros_like(self.weights, dtype=torch.uint8).view(-1)
+        self.failure_mask = torch.zeros_like(self.weights).byte().view(-1)
         if len(indices) > 0:
             self.failure_mask[indices] = 1
         self.failure_mask = self.failure_mask.view(*self.weights.shape)
