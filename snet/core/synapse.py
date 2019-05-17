@@ -119,7 +119,7 @@ class AbstractSynapse(object):
         output_number = self.network.OUTPUT.size
         cols = ceil(sqrt(output_number))
 
-        w = torchvision.utils.make_grid(self.weights.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=cols,
+        w = torchvision.utils.make_grid(self.weights.cpu().view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=cols,
                                         normalize=True, range=(self.w_min, self.w_max))
 
         plt.figure(1)
@@ -137,7 +137,7 @@ class AbstractSynapse(object):
         output_number = self.network.OUTPUT.size
         cols = ceil(sqrt(output_number))
 
-        m = torchvision.utils.make_grid(self.update_counts.view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=cols,
+        m = torchvision.utils.make_grid(self.update_counts.cpu().view(1, *image_size, -1).permute(3, 0, 1, 2), nrow=cols,
                                         normalize=True)
 
         m = m.permute(1, 2, 0)[:, :, 0]
@@ -279,7 +279,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         # mask
         pre_active = (self._last_pre_spike_time >= 0).to(device=dev)
-        active = torch.ger(pre_active.float(), self.post_layer.firing_mask.float())     # fired pre-spikes and new post-spikes
+        active = torch.ger(pre_active.float(), self.post_layer.firing_mask.float()).byte()     # fired pre-spikes and new post-spikes
 
         # calculate timing difference (where new post-spikes timing is now)
         dt = (self._last_post_spike_time.repeat(self.pre_layer.size, 1) -
