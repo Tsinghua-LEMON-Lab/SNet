@@ -136,7 +136,7 @@ class PoissonLayer(Layer):
 
         x = torch.rand_like(self.image)
 
-        self.firing_mask = (x <= ref)
+        self.firing_mask = (x <= ref).type(uint8)
 
         self._fire_and_reset()
 
