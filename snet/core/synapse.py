@@ -155,6 +155,13 @@ class AbstractSynapse(object):
 
         plt.pause(0.5)
 
+    def ger_device(self, tensor1, tensor2, use_gpu=True):
+
+        if use_gpu and torch.cuda.is_available():
+            return torch.ger(tensor1.cuda().float(), tensor2.cuda().float()).byte()
+        else:
+            return torch.ger(tensor1, tensor2)
+
 
 class ExponentialSTDPSynapse(AbstractSynapse):
     """
@@ -186,7 +193,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
 
         # mask
         post_active = (self._last_post_spike_time >= 0).to(device=dev)
-        active = torch.ger(self.pre_layer.firing_mask.float(), post_active.float()).byte()  # new pre-spikes and fired post-spikes
+        active = self.ger_device(self.pre_layer.firing_mask, post_active)   # new pre-spikes and fired post-spikes
 
         # calculate timing difference (where new pre-spikes timing is now)
         dt = (self._last_pre_spike_time.repeat(self.post_layer.size, 1).t() -
@@ -213,7 +220,7 @@ class ExponentialSTDPSynapse(AbstractSynapse):
 
         # mask
         pre_active = (self._last_pre_spike_time >= 0).to(device=dev)
-        active = torch.ger(pre_active.float(), self.post_layer.firing_mask.float()).byte()     # fired pre-spikes and new post-spikes
+        active = self.ger_device(pre_active, self.post_layer.firing_mask)
 
         # calculate timing difference (where new post-spikes timing is now)
         dt = (self._last_post_spike_time.repeat(self.pre_layer.size, 1) -
@@ -252,7 +259,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         # mask
         post_active = (self._last_post_spike_time >= 0).to(device=dev)
-        active = torch.ger(self.pre_layer.firing_mask.float(), post_active.float()).byte()  # new pre-spikes and fired post-spikes
+        active = self.ger_device(self.pre_layer.firing_mask, post_active)   # new pre-spikes and fired post-spikes
 
         # calculate timing difference (where new pre-spikes timing is now)
         dt = (self._last_pre_spike_time.repeat(self.post_layer.size, 1).t() -
@@ -279,7 +286,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         # mask
         pre_active = (self._last_pre_spike_time >= 0).to(device=dev)
-        active = torch.ger(pre_active.float(), self.post_layer.firing_mask.float()).byte()     # fired pre-spikes and new post-spikes
+        active = self.ger_device(pre_active, self.post_layer.firing_mask)
 
         # calculate timing difference (where new post-spikes timing is now)
         dt = (self._last_post_spike_time.repeat(self.pre_layer.size, 1) -
