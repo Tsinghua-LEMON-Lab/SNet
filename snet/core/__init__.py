@@ -33,11 +33,11 @@ class Network(object):
         self.OUTPUT = LIFLayer(options['output_number'], self)
 
         # instantiate synapse
-        update_variation = self.options.get('update_variation', 0.)
-        if update_variation > 0:
-            self.W = RRAMSynapse(self.INPUT, self.OUTPUT, self)
-        else:
-            self.W = ExponentialSTDPSynapse(self.INPUT, self.OUTPUT, self)
+        # update_variation = self.options.get('update_variation', 0.)
+        # if update_variation > 0:
+        #     self.W = RRAMSynapse(self.INPUT, self.OUTPUT, self)
+        # else:
+        self.W = ExponentialSTDPSynapse(self.INPUT, self.OUTPUT, self)
 
         # clock (count in unit of `dt`)
         self.dt = options.get('dt')
