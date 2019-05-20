@@ -243,9 +243,14 @@ class RRAMSynapse(ExponentialSTDPSynapse):
     def __init__(self, *args, **kwargs):
         super(RRAMSynapse, self).__init__(*args, **kwargs)
 
-        self.update_variation = self.options.get('update_variation', 0.5)
+        # variation option
+        learning_rate_d2d_variation = self.options.get('learning_rate_d2d_variation', 0.)
+        if learning_rate_d2d_variation > 0:
+            dist = Normal(1.0, learning_rate_d2d_variation)
+            self.learning_rate_m = self.learning_rate_m * dist.sample(self.weights.shape)
+            self.learning_rate_p = self.learning_rate_p * dist.sample(self.weights.shape)
 
-        self.distribution = Normal(1.0, self.update_variation)
+        # self.distribution = Normal(1.0, self.update_variation)
 
     def _clamp(self):
         self.weights.clamp_(min=0.)
@@ -274,7 +279,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
         # weights decrease, because pre-spikes come after post-spikes
         dw = self.learning_rate_m * (self.weights - self.w_min) * torch.exp(-dt / self.tau_m)
         dw.masked_fill_(~active, 0)
-        self.weights -= dw * self.distribution.sample(dw.shape)
+        self.weights -= dw
         self._clamp()
 
     def update_on_post_spikes(self):
@@ -301,5 +306,5 @@ class RRAMSynapse(ExponentialSTDPSynapse):
         # weights decrease, because pre-spikes come after post-spikes
         dw = self.learning_rate_p * (self.w_max - self.weights) * torch.exp(-dt / self.tau_p)
         dw.masked_fill_(~active, 0)
-        self.weights += dw * self.distribution.sample(dw.shape)
+        self.weights += dw
         self._clamp()
