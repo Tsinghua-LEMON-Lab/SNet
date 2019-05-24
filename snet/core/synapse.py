@@ -253,20 +253,14 @@ class RRAMSynapse(ExponentialSTDPSynapse):
         learning_rate_c2c_variation = self.options.get('learning_rate_c2c_variation', 0.)
         self.distribution = Normal(1.0, learning_rate_c2c_variation)
 
-        wmax_d2d_variation = self.options.get('wmax_d2d_variation', 0.)
-        if wmax_d2d_variation > 0:
-            dist = Normal(1.0, wmax_d2d_variation)
+        window_d2d_variation = self.options.get('window_d2d_variation', 0.)
+        if window_d2d_variation > 0:
+            dist = Normal(1.0, window_d2d_variation)
             self.w_max = self.w_max * dist.sample(self.weights.shape)
-
-        wmin_d2d_variation = self.options.get('wmin_d2d_variation', 0.)
-        if wmin_d2d_variation > 0:
-            dist = Normal(1.0, wmin_d2d_variation)
             self.w_min = self.w_min * dist.sample(self.weights.shape)
 
-        wmax_c2c_variation = self.options.get('wmax_c2c_variation', 0.)
-        wmin_c2c_variation = self.options.get('wmin_c2c_variation', 0.)
-        self.wmax_dist = Normal(1.0, wmax_c2c_variation)
-        self.wmin_dist = Normal(1.0, wmin_c2c_variation)
+        window_c2c_variation = self.options.get('window_c2c_variation', 0.)
+        self.window_dist = Normal(1.0, window_c2c_variation)
 
     def _clamp(self):
         self.weights.clamp_(min=0.)
@@ -294,7 +288,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         # weights decrease, because pre-spikes come after post-spikes
         dw = (self.learning_rate_m * self.distribution.sample(self.weights.shape) *
-              (self.weights - self.w_min * self.wmin_dist.sample(self.weights.shape)) * torch.exp(-dt / self.tau_m))
+              (self.weights - self.w_min * self.window_dist.sample(self.weights.shape)) * torch.exp(-dt / self.tau_m))
         dw.masked_fill_(~active, 0)
         self.weights -= dw
         self._clamp()
@@ -322,7 +316,7 @@ class RRAMSynapse(ExponentialSTDPSynapse):
 
         # weights decrease, because pre-spikes come after post-spikes
         dw = (self.learning_rate_p * self.distribution.sample(self.weights.shape) *
-              (self.w_max * self.wmax_dist.sample(self.weights.shape) - self.weights) * torch.exp(-dt / self.tau_p))
+              (self.w_max * self.window_dist.sample(self.weights.shape) - self.weights) * torch.exp(-dt / self.tau_p))
         dw.masked_fill_(~active, 0)
         self.weights += dw
         self._clamp()
